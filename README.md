@@ -335,10 +335,6 @@ where $Q_\text{batch}$ is the average power needed to melt 2 t of palm oil over 
 
 **Proposal II** quantifies it explicitly: even the smallest bore (1-inch) requires only **≈ 5.8 m** of coil (against a 65 m geometric ceiling — under 9% utilisation) to guarantee the 60°C process target. The recommended 1.5-inch bore requires only 4.1 m at the 70°C worst-case drive. This confirms that T5 is not capacity-limiting under any evaluated scenario.
 
-### 9.5 DOI Update
-
-The VCH Sizing Framework DOI cited in Proposal II has been updated to **10.5281/zenodo.21009246**. Earlier references to DOI 10.5281/zenodo.15579395 corresponded to a prior release of the framework document.
-
 ---
 
 ## 10. Changelog: Proposal II → Proposal III (Architectural Revision I)
