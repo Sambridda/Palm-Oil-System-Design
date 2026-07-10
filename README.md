@@ -99,7 +99,7 @@ This led directly to the demand-driven "pull" automation architecture. Real-time
 
 Once the demand-driven multi-tank queue was validated, a new operational requirement emerged: one of the three T10 vessels needed to be carved out as dedicated palm olein storage rather than continuing to melt palm oil. Palm olein solidifies at a much lower temperature (≈24°C, versus palm oil's 36°C) and, once liquid, needs comparatively little energy to stay that way — so simply leaving it in the shared rotation would have distorted the tank-scoring system's assumptions, which were derived entirely around palm oil's higher-energy melt behaviour.
 
-The fix required restructuring at the piping level, not just the control level: the original **shared water header** across the three T10 tanks was replaced with an **individualised feed per tank**, gated by a manual ball valve in series with an automated control valve. This is what makes it possible to designate one tank as a dedicated, isolated PO (palm olein) store — automatically excluded from the melting rotation, manually hard-isolated as a physical safeguard, and dispensed only via operator-triggered HMI pulses — without touching the piping or control logic of the other two tanks.
+The fix required restructuring at the piping level, not just the control level — on the **oil side**, not the hydronic heating side. The original design drew all three tanks' oil off a **single shared feed pipe**; this revision gives each tank its **own dedicated oil pump and feed line**, gated by a manual ball valve in series with an automated control valve. The water/hydronic heating circuit itself is unchanged. This individualised oil feed is what makes it possible to designate one tank as a dedicated, isolated PO (palm olein) store — automatically excluded from the melting rotation, manually hard-isolated as a physical safeguard, and dispensed only via operator-triggered HMI pulses — without touching the piping or control logic of the other two tanks.
 
 This single change cascaded into a full re-architecture of the plant's priority logic (see below) and its fault-detection philosophy (Section 4).
 
@@ -133,7 +133,7 @@ Initial vessel proportioning followed the aspect ratio guidance in the VCH Sizin
 
 > *Process Flow Diagram (PFD) is available in the repository. Detailed architectural data to be added.*
 
-As of Proposal III, the plant is organised around **individualised feeds** to each of the three T10 tanks (rather than a shared header), with one T10 tank optionally designated by site technicians as the **PO tank** — automatically and manually isolated from the common palm-oil bunch and dispensed only via HMI-driven pulse logic. Water time across the plant is arbitrated by the **P1 (T5) → P2 (PO tank) → P3 (palm oil melt)** priority ladder described in Section 2.
+As of Proposal III, each of the three T10 tanks has its own **dedicated oil pump and feed line** (rather than drawing off a single shared oil feed pipe), with one T10 tank optionally designated by site technicians as the **PO tank** — automatically and manually isolated from the common palm-oil bunch and dispensed only via HMI-driven pulse logic. The hydronic water/heating circuit is unchanged from Proposal II. Water time across the plant is arbitrated by the **P1 (T5) → P2 (PO tank) → P3 (palm oil melt)** priority ladder described in Section 2.
 
 ---
 
@@ -341,11 +341,11 @@ where $Q_\text{batch}$ is the average power needed to melt 2 t of palm oil over 
 
 This section documents the technical changes introduced by the current revision.
 
-### 10.1 Shared Header → Individualised Feeds
+### 10.1 Shared Oil Feed → Individualised Oil Feed per Tank
 
-**Proposal II** retained a shared water header across the three T10 tanks, with tank selection handled entirely by the PLC's scoring logic.
+**Proposal II** retained a single shared oil feed pipe across the three T10 tanks, with tank selection handled entirely by the PLC's scoring logic. The hydronic water/heating circuit was, and remains, a separate system.
 
-**Proposal III** replaces the shared header with an **individualised feed per tank** — each T10 vessel is gated by its own manual ball valve in series with its own automated control valve. This is the structural prerequisite for designating one tank as a dedicated palm olein store without disturbing the piping or control logic of the other two.
+**Proposal III** replaces the shared oil feed with an **individualised feed per tank on the oil side** — each T10 vessel gets its own dedicated oil pump and feed line, gated by a manual ball valve in series with an automated control valve. The water-side hydronic circuit is unchanged. This oil-side restructuring is the structural prerequisite for designating one tank as a dedicated palm olein store without disturbing the piping or control logic of the other two.
 
 ### 10.2 New Tank Class: The PO (Palm Olein) Tank
 
