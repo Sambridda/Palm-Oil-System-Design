@@ -2,14 +2,15 @@
 
 **Industrial thermal systems design and automation architecture for a multi-tank palm oil melting, storage, and trim-heating facility — Mechatronics Engineering Pvt. Ltd. (MEPL), Kathmandu.**
 
-Grounded in the self-authored **VCH Sizing Framework (2nd Ed.)**, the system coordinates a passive solar thermal loop with an auxiliary electric immersion array through PLC automation to deliver demand-driven, high-efficiency process operations.
+Grounded in the self-authored **VCH Sizing Framework (2nd Ed.)**, the system coordinates a passive solar thermal loop with an auxiliary electric immersion array through PLC automation to deliver demand-driven, high-efficiency process operations. As of Proposal IV, this automation logic is formalised as the **Adaptive Demand Allocation Architecture (ADA)** — see [Section 5.1](#51-the-adaptive-demand-allocation-architecture-ada).
 
 > **Document History**
 > | Version | Date | Status |
 > | :--- | :--- | :--- |
 > | Technical Proposal I | Prior to June 2026 | Archived — superseded |
 > | Technical Proposal II | June 29, 2026 | Archived — superseded |
-> | Technical Proposal III (Architectural Revision I) | July 10, 2026 | Current — For Review |
+> | Technical Proposal III (Architectural Revision I) | July 10, 2026 | Archived — superseded |
+> | Technical Proposal IV (Architectural Revision II — ADA) | July 12, 2026 | Current — For Review |
 
 ---
 
@@ -19,13 +20,14 @@ Grounded in the self-authored **VCH Sizing Framework (2nd Ed.)**, the system coo
 2. [Engineering Journey & Design Challenges](#2-engineering-journey--design-challenges)
 3. [System Architecture](#3-system-architecture)
 4. [Core Technical Deep Dives](#4-core-technical-deep-dives)
-5. [The VCH Sizing Framework](#5-the-vch-sizing-framework)
+5. [The VCH Sizing Framework & ADA](#5-the-vch-sizing-framework--ada)
 6. [Headline Results & Validation Metrics](#6-headline-results--validation-metrics)
 7. [Future Plan](#7-future-plan)
 8. [My Contributions](#8-my-contributions)
 9. [Changelog: Proposal I → Proposal II](#9-changelog-proposal-i--proposal-ii)
 10. [Changelog: Proposal II → Proposal III (Architectural Revision I)](#10-changelog-proposal-ii--proposal-iii-architectural-revision-i)
-11. [Appendix: Engineering Notebook](#appendix-engineering-notebook)
+11. [Changelog: Proposal III → Proposal IV (Architectural Revision II — ADA)](#11-changelog-proposal-iii--proposal-iv-architectural-revision-ii--ada)
+12. [Appendix: Engineering Notebook](#appendix-engineering-notebook)
 
 ---
 
@@ -54,6 +56,16 @@ The misalignment was resolved through structured clarification: revisiting the o
 
 ---
 
+### Requirement Volatility Across Four Proposal Cycles
+
+Between Proposal I and the current revision, the client's stated requirements changed substantially and more than once — the production window (see above), the supply/coil pipe cost preference, the introduction of a dedicated palm olein product line partway through, and most recently a hardware change (trunk upsizing) that reopened the entire priority and control-logic layer. None of these were anticipated at the outset.
+
+Rather than treating each change as a disruption requiring a ground-up redesign, the architecture was deliberately kept modular enough to absorb them: the VCH thermal sizing methodology, the ε-NTU coil-length inversion, and the priority-budget control philosophy each proved reusable across revisions, with each new requirement extending the existing framework rather than replacing it. The PO tank introduction in Proposal III, for example, required restructuring the oil-side piping and adding a third priority tier — but did not require re-deriving the underlying thermal model, which carried forward unchanged.
+
+**Takeaway:** A four-revision proposal history is not, on its own, a sign of a poorly-scoped project — it is a normal feature of iterative industrial design work done alongside a client who is still discovering their own requirements. The relevant engineering discipline is not preventing requirement change, but architecting a system whose core methodology survives it. That discipline is reflected directly in the changelog structure of this document (Sections 9–11), which exists specifically to make each revision's actual delta traceable against the last.
+
+---
+
 ### Solar Loop Integration: Single-Pump Architecture
 
 The standard two-loop passive solar integration approach — where the solar circuit operates independently and dumps heat into the primary loop only when capacity permits — would have required a dedicated secondary circulation pump. To reduce capital cost and system complexity, the loop topology was redesigned so that a single high-pressure pump handles full circulation duties across both the solar collectors and the primary process loop.
@@ -77,7 +89,9 @@ Publishing all four cases in the proposal preserves full transparency for the cl
 
 > **Proposal II update:** The four-case supply/coil matrix has been resolved into a **single standardised supply pipe** (1-inch Schedule 40 CPVC throughout the loop), eliminating the supply pipe as an independent variable. The coil bore remains a design variable and is now evaluated across 1-inch, 1.25-inch, 1.5-inch, and 2-inch NPS in SS 304 Schedule 10S.
 >
-> **Proposal III update:** The coil bore variable is itself resolved into a **single standardised 2-inch bore across every tank** (T10, PO, and T5 alike), trading a small amount of thermal margin for a single procurement spec across the whole plant. See [Section 10](#10-changelog-proposal-ii--proposal-iii-architectural-revision-i) for detail.
+> **Proposal III update:** The coil bore variable is itself resolved into a **single standardised 2-inch bore across every tank** (T10, PO, and T5 alike), trading a small amount of thermal margin for a single procurement spec across the whole plant.
+>
+> **Proposal IV update:** The 2-inch coil bore and tank-level piping are unchanged. The variable reopened this revision is the **trunk main**, upsized from 1-inch to 1.5-inch specifically to enable dual-branch parallel flow — see [Section 11](#11-changelog-proposal-iii--proposal-iv-architectural-revision-ii--ada).
 
 ---
 
@@ -93,9 +107,11 @@ Once the solid-phase oil-side resistance was confirmed as an unyielding physical
 
 This led directly to the demand-driven "pull" automation architecture. Real-time volume- and temperature-weighted priority matrices ($S_\text{casual}$ and $S_\text{immediate}$) allow the PLC to continuously prepare, melt, and hold oil across all three 10 kL vessels in an overlapping sequence — bypassing single-tank cycle limitations and securing an uninterrupted downstream process stream.
 
+**Proposal IV extends this same philosophy one level further**: if a single *branch's* flow rate cannot be increased without a full hydraulic redesign, throughput can instead be recovered by allowing the trunk to serve *two branches in parallel* — see the Need-Array Priority Framework below.
+
 ---
 
-### From a Shared Bunch to a Dedicated Palm Olein Tank (New in Proposal III)
+### From a Shared Bunch to a Dedicated Palm Olein Tank (Proposal III)
 
 Once the demand-driven multi-tank queue was validated, a new operational requirement emerged: one of the three T10 vessels needed to be carved out as dedicated palm olein storage rather than continuing to melt palm oil. Palm olein solidifies at a much lower temperature (≈24°C, versus palm oil's 36°C) and, once liquid, needs comparatively little energy to stay that way — so simply leaving it in the shared rotation would have distorted the tank-scoring system's assumptions, which were derived entirely around palm oil's higher-energy melt behaviour.
 
@@ -105,11 +121,11 @@ This single change cascaded into a full re-architecture of the plant's priority 
 
 ---
 
-### A Three-Way Priority Ladder, Not a Fixed Split (New in Proposal III)
+### A Three-Way Priority Ladder, Not a Fixed Split (Proposal III)
 
 Introducing the PO tank meant the old two-tier logic (T5 master, T10 demand-pull) needed a third rung: **P1 — T5 trim-heating**, **P2 — PO tank temperature maintenance**, and **P3 — T10 palm oil melting**. The obvious approach — a strict P1 ≫ P2 ≫ P3 lockout — was rejected: it would mean P3 simply waits, indefinitely if necessary, whenever P1 or P2 has any demand at all, even though palm oil melting tolerates interruption far better than a live PO-tank dispense or T5's process-critical trim-heating.
 
-Instead, arbitration was resolved as a **sequential daily energy budget**: P1's and P2's actual required duty periods are computed first, and P3 — by design the process that absorbs all of the system's slack — receives whatever remains of the 24-hour window. P2 itself is bounded within a 10-minute arbitration window (sized off T5's own worst-case heat-up time) and flat-capped at 5 of every 10 minutes, so it cannot starve P3 indefinitely even on a heavy dispense day.
+Instead, arbitration was resolved as a **sequential daily energy budget**: P1's and P2's actual required duty periods are computed first, and P3 — by design the process that absorbs all of the system's slack — receives whatever remains of the 24-hour window. This ladder was retained as the basis for arbitration logic through Proposal III; Proposal IV reframes it into a parallel need-array rather than a strict sequence (Section 11), while keeping P3's role as the slack-absorbing process unchanged.
 
 **Takeaway:** Adding a third demand source didn't call for a more complex real-time scheduler — it called for recognising which processes can tolerate deferral and encoding that directly into a daily budget rather than a live priority fight.
 
@@ -133,7 +149,7 @@ Initial vessel proportioning followed the aspect ratio guidance in the VCH Sizin
 
 > *Process Flow Diagram (PFD) is available in the repository. Detailed architectural data to be added.*
 
-As of Proposal III, each of the three T10 tanks has its own **dedicated oil pump and feed line** (rather than drawing off a single shared oil feed pipe), with one T10 tank optionally designated by site technicians as the **PO tank** — automatically and manually isolated from the common palm-oil bunch and dispensed only via HMI-driven pulse logic. The hydronic water/heating circuit is unchanged from Proposal II. Water time across the plant is arbitrated by the **P1 (T5) → P2 (PO tank) → P3 (palm oil melt)** priority ladder described in Section 2.
+As of Proposal IV, each of the three T10 tanks has its own **dedicated oil pump and feed line**, with one T10 tank optionally designated by site technicians as the **PO tank** — automatically and manually isolated from the common palm-oil bunch and dispensed only via HMI-driven pulse logic. On the hydronic side, the trunk main has been upsized from 1-inch to **1.5-inch NPS**, enabling it to serve two 1-inch branches simultaneously at their full individual design flow. Water time across the plant is arbitrated by the **ADA need-array** — P1 (T5), P2 (PO tank), P3 (palm oil melt) — described in full in [Section 5.1](#51-the-adaptive-demand-allocation-architecture-ada) and [Section 11](#11-changelog-proposal-iii--proposal-iv-architectural-revision-ii--ada).
 
 ---
 
@@ -161,7 +177,7 @@ $$T_{f}(x,\, y,\, m_p) = \frac{239.53\, x + m_p\, y}{239.53 + m_p}$$
 | $y$ | Instantaneous temperature of the target melting tank |
 | $m_p$ | Estimated remaining mass of solid/liquid oil phase |
 
-This algorithm protects high-pressure line components and prevents product degradation without operator intervention. It is retained unchanged in Proposal III, governing T5's safety cutoff logic.
+This algorithm protects high-pressure line components and prevents product degradation without operator intervention. It is retained unchanged through Proposal IV, governing T5's safety cutoff logic. Proposal IV's worst-case T5 loss calculation (Section 11) deliberately evaluates the tank at this boundary (55°C) as a conservative stress-test basis.
 
 ### Volume- and Temperature-Weighted Tank Scoring
 
@@ -170,41 +186,85 @@ Two independent PLC calculation blocks evaluate plant state and drive the stagge
 - **$S_\text{casual}$ Block** — Manages solar thermal energy distribution to tanks requiring non-urgent pre-heating.
 - **$S_\text{immediate}$ Block** — Prioritises auxiliary electric backup (36 kW) to the active processing tank when a downstream demand signal ($\delta$) is high, preventing line starvation.
 
-Retained unchanged in Proposal III, now applied only across the two T10 tanks not designated as the PO tank.
+Retained unchanged through Proposal IV, applied only across the two T10 tanks not designated as the PO tank.
 
 ### Coil Sizing: Inverted Design Logic
 
 Proposal I fixed the coil at its geometric ceiling (90 m for T10) and asked what throughput results. Proposal II inverted this: a heat-duty target $Q_\text{target} = Q_\text{batch} + Q_\text{loss,max} = 9.17\ \text{kW}$ is defined from the mandate and worst-case standing loss, and the **minimum coil length required** is solved in closed form via the ε-NTU method.
 
-Proposal III fixes the coil bore and length outright (2-inch bore, 30 m for T10/PO tanks, 10 m for T5) as a standardised, single-spec design across the whole plant — see Section 10 for why this costs almost nothing in thermal performance.
+Proposal III fixed the coil bore and length outright (2-inch bore, 30 m for T10/PO tanks, 10 m for T5) as a standardised, single-spec design across the whole plant. **Proposal IV retains this coil spec unchanged** — the throughput gain this revision comes entirely from trunk-level dual-branch operation, not from any further coil resizing.
 
-### Batch-Side Modelling Correction: $C_\text{min} = C_w$ (New in Proposal III)
+### Batch-Side Modelling Correction: $C_\text{min} = C_w$
 
 Proposal I's T5 analysis treated oil throughput as $C_\text{min}$, appropriate for continuous flow-through duty. Under the individualised-feed architecture, each tank is instead heated as a **well-mixed batch** whose bulk temperature changes slowly relative to a single pass of water through the coil — so the water side is $C_\text{min}$ ($C_w$) and the tank contents behave as $C_\text{max} \to \infty$ over one coil pass. Using the old throughput-rate model here would have predicted effectiveness in excess of 98% and near-instant temperature overshoot — physically inconsistent with a duty-cycled batch process. All NTU calculations from Proposal III onward use:
 
 $$NTU = \frac{UA}{C_w}, \quad \varepsilon = 1 - e^{-NTU}, \quad Q(T_\text{tank}) = \varepsilon\, C_w\, (T_\text{hot} - T_\text{tank})$$
 
-### Fault Detection: A Physics-Based Alarm Philosophy (New in Proposal III)
+### Fault Detection: A Physics-Based Alarm Philosophy
 
 An earlier iteration considered alarming whenever P1's duty cycle, measured over a short rolling window, exceeded twice its statistically expected value. This was rejected because P1's real-world demand is inherently bursty — legitimate operation naturally produces some windows with heavy, clustered activity and others with none, so a duty-percentage threshold can't distinguish a busy stretch of the day from an actual fault.
 
-The revised philosophy alarms on **physics, not bookkeeping**: the PLC compares T5's observed heating and cooling rates against the maximum physically achievable rates given the coil's known heat-delivery capacity and the tank's own computed loss rate. Heating faster than the coil could physically produce, or cooling faster than the tank's own standing loss rate can account for, both indicate a sensor, valve, or leak fault — independent of how busy the day has been.
+The revised philosophy alarms on **physics, not bookkeeping**: the PLC compares T5's observed heating and cooling rates against the maximum physically achievable rates given the coil's known heat-delivery capacity and the tank's own computed loss rate. Heating faster than the coil could physically produce, or cooling faster than the tank's own standing loss rate can account for, both indicate a sensor, valve, or leak fault — independent of how busy the day has been. Retained unchanged in Proposal IV.
 
 ---
 
-## 5. The VCH Sizing Framework
+## 5. The VCH Sizing Framework & ADA
 
 This system is a full-scale industrial deployment of the **VCH Sizing Framework (2nd Edition)** — a methodology authored specifically for submerged hydronic coil thermal systems. The project served as a definitive verification platform, confirming that unifying coil heat transfer modeling with multi-phase thermal boundary calculations produces highly predictable, field-resilient industrial designs.
 
 **DOI:** [10.5281/zenodo.21009246](https://doi.org/10.5281/zenodo.21009246)
 
+### 5.1 The Adaptive Demand Allocation Architecture (ADA)
+
+As of Proposal IV, the plant's control logic is formalised under a single name — the **Adaptive Demand Allocation Architecture (ADA)** — a responsive control framework for multi-load thermal distribution systems that replaces rigid sequential scheduling and static supply setpoints with real-time fluid-mechanics-aware, energy-budgeted, operator-centric governance. ADA rests on four pillars:
+
+**1. The Need-Array Priority Framework.** Rather than a strict priority ladder that locks out lower-priority processes entirely whenever a higher-priority one is active, ADA evaluates active demand as a parallel need array with **three distinct tiers**, not two:
+   - *Unbounded, guaranteed service* — T5 trim-heating (P1), the process master.
+   - *Bounded, operator-supervised* — PO tank maintenance/dispense (P2), capped by daily throughput and layered governance rather than by priority lockout.
+   - *Remainder-absorbing* — palm oil melting (P3), which by design receives whatever branch-time the array leaves available, and benefits directly whenever a second branch is free to run in parallel.
+
+   When one process is active, the trunk runs at a reduced single-branch velocity; when two are active, it shifts to a high-velocity dual-branch posture, serving both concurrently at their full individual design flow — a direct consequence of upsizing the trunk main to 1.5-inch (Section 11.1).
+
+**2. Demand-Driven Dynamic Thermal Sizing.** Rather than holding the utility loop at a fixed, energy-intensive maximum ceiling (70°C, constant, in Proposal III), ADA evaluates aggregate instantaneous demand ($E_\text{total}$) on a continuous 10-second refresh window and derives the water supply target from it directly. The control law is a **two-point anchored proportional relationship** — anchored specifically at system idle ($P=0\to40°C$) and at **T5's own established worst-case power draw** ($P\approx6.16\ \text{kW}\to70°C$), not a generic system-wide worst case. T5 is used as the anchor because it is the process master; the water supply is considered "fully hot" once demand reaches what T5 alone can draw at its own worst case. The underlying demand function explicitly tracks the physical discontinuity at the palm oil melting point (a genuine step in remaining energy demand, not a modelling artefact) and the distinct natural-convection loss behaviour of insulated (T5) versus uninsulated (PO tank) vessels.
+
+**3. Load-Responsive Operational Postures.** System execution is governed by T5's own live level ($\alpha_S$) — not a fixed schedule, and not T10 tank level or temperature — since T5's level is the clearest available signal of how urgently the whole plant needs melted oil:
+   - **Eco Mode** ($\alpha_S \geq 90\%$) — buffer nearly full, low-intensity maintenance rate.
+   - **Efficiency Mode** ($90\% > \alpha_S \geq 50\%$) — steady-state operating tier.
+   - **Full Throttle** ($\alpha_S < 50\%$) — aggressive demand pull, deliberately triggered at the same 50% threshold that already fires the batch-release logic, so the two mechanisms reinforce rather than disagree.
+
+   Mode selection and the demand-driven water temperature are not competing signals to be resolved by taking whichever is "higher" — they sit in a cause-and-effect relationship. Mode decides how aggressively P3 pulls; that decision shapes $E_\text{total}$; $E_\text{total}$ decides how hot the water needs to be delivered to meet whatever was asked for.
+
+**4. Layered Operator-Trust Governance.** For the PO tank's operator-initiated, operator-supervised dispensing, ADA replaces disruptive automatic hard-cutoffs with layered oversight: a **suspicion meter** ($S \in \{0,1,2,3\}$, resetting every 24 hours) that escalates from an HMI confirmation prompt through an alarm to autonomous feed isolation only at its highest tier (and only after a 5-minute no-response auto-escalation, never on a single long dispense), alongside an independent **soft-ceiling buffer** — supervised deviations up to 2× the operator-entered quantity are permitted before a warning is raised, and that ceiling is manual-shutoff only, so a live, supervised operation is never silently interrupted by a raw PLC timer.
+
+> **Architectural impact.** By mapping a single hardware change — the upsized trunk cross-section — directly onto this four-pillar control framework, ADA lifts combined system throughput to **≈271%** of the original 2 t/day mandate (≈246% from palm oil melting alone, plus the PO tank's dispensed volume), without any change to individual coil sizing. It is a working example of software intelligence directly amplifying a fixed mechanical footprint's real capacity.
+
 ---
 
 ## 6. Headline Results & Validation Metrics
 
-### Proposal III Results (Current — Architectural Revision I)
+### Proposal IV Results (Current — Architectural Revision II / ADA)
 
-Evaluated under a constant 70°C water supply, 1.2 m/s feed velocity cap, and standardised 2-inch coil bore throughout (30 m for T10/PO tanks, 10 m for T5), with sequential (single-branch) water-time arbitration across P1/P2/P3:
+Evaluated under a 1.5-inch trunk main (dual-branch capable), 1.2 m/s branch feed velocity cap, and the same standardised 2-inch coil bore as Proposal III (30 m for T10/PO tanks, 10 m for T5), with the need-array governing single- vs. dual-branch operation:
+
+| Performance Metric | Result |
+| :--- | :---: |
+| **Trunk flow advantage over a single branch** | 2× |
+| **T5 (P1) daily duty period, worst case (4 t/day basis)** | 3.67 hr (15.3%) |
+| **PO tank (P2) daily duty period** | 0.59 hr (2.4%) |
+| **P3 effective dual-branch energy budget** | ≈ 43.7 branch-hr/day |
+| **Palm oil melted per day (P3, dual-delivery)** | ≈ 4,919.8 kg (4.92 t/day) |
+| **Combined system throughput (P3 melt + PO tank)** | ≈ 5,419.8 kg (5.42 t/day) |
+| **Fulfilment vs. 2 t/day mandate (melt only / combined)** | ≈ 246% / ≈ 271% |
+| **Total daily thermal energy demand** | ≈ 1081.5 MJ |
+| **Average continuous power demand** | ≈ 12.5 kW |
+
+**Key findings:**
+- **The trunk upsize is the single highest-leverage change in this revision** — without altering any coil, tank, or water temperature specification, enabling two branches to run in parallel roughly doubles P3's effective daily throughput.
+- **P3's 48-branch-hour budget calculation is a deliberate conservative floor**, not a best case — it subtracts P1's and P2's full raw duty duration from the doubled daily pool regardless of how much of that time genuinely overlaps with P3's own access. A less conservative, overlap-credited model would recover most of the remaining gap toward the ≈6 t/day figure referenced during early scoping.
+- **The PO tank's own standing heat loss still dominates its energy budget roughly 7:1** over its sensible duty, because it remains uninsulated — unchanged from Proposal III and still the single highest-leverage efficiency gain available.
+- **This revision's T5 loss calculation deliberately evaluates the tank at its 55°C dynamic upper thermal boundary** (a worst-case stress-test basis), not at its typical operating mid-band — this distinction should be labelled explicitly wherever the figure is reused downstream.
+
+### Archived: Proposal III Results (Architectural Revision I)
 
 | Performance Metric | Result |
 | :--- | :---: |
@@ -218,10 +278,7 @@ Evaluated under a constant 70°C water supply, 1.2 m/s feed velocity cap, and st
 | **Solar (ETC) contribution to demand** | ≈ 40% |
 | **Auxiliary (36 kW) headroom vs. average demand** | > 5× |
 
-**Key findings:**
-- The system is **not heat-limited** — P1 and P2 together consume only 10.9% of the day's coil availability. The true constraint on P3's throughput is the ≈77.8 hr melt time of a full 10 kL tank, not available thermal power.
-- The PO tank's own standing heat loss, not its sensible duty, dominates its energy budget (roughly 7:1) because it remains uninsulated — identified as the single highest-leverage efficiency gain in this revision.
-- The mandate is still comfortably exceeded (≈122% fulfilment) even after diverting a full tank's worth of capacity to palm olein and giving P1/P2 priority ahead of P3.
+> Note: Proposal IV's figures are not directly comparable to Proposal III's on a like-for-like basis — Proposal IV introduces dual-branch trunk operation, a doubled T5 demand basis (4 t/day vs. 2 t/day), and a worst-case (55°C boundary) T5 loss evaluation rather than the typical mid-band used in Proposal III. See [Section 11](#11-changelog-proposal-iii--proposal-iv-architectural-revision-ii--ada) for the full basis-change breakdown.
 
 ### Archived: Proposal II Results
 
@@ -233,8 +290,6 @@ Evaluated under a constant 70°C water supply, 1.2 m/s feed velocity cap, and st
 | **Solar Loop Thermal Coverage (ETC)** | Maximise | **61.46%** offset | Emergency electric override |
 | **System Thermal Bottleneck** | Mitigate | Oil-side impedance (>95%) | Oil-side impedance (>95%) |
 | **T5 coil length required (1.5" bore)** | — | **3.2 m** of 65 m ceiling | **4.1 m** of 65 m ceiling |
-
-> Note: Proposal III's headline figures are not directly comparable to Proposal II's on a like-for-like basis — Proposal III introduces a fixed 2-inch bore across all tanks, a dedicated PO tank (removing one T10 tank from the palm-oil rotation), sequential rather than purely throughput-optimised water-time allocation, and reports against the single-branch case only (see Section 10 of the Architectural Revision I document for the simultaneous-branch outlook).
 
 ### Archived: Proposal I Results
 
@@ -249,28 +304,30 @@ Evaluated under a constant 70°C water supply, 1.2 m/s feed velocity cap, and st
 
 ## 7. Future Plan
 
-With the revised (Proposal III) architecture in place, the next phases are:
+With Proposal IV / ADA in place, the next phases are:
 
-**Simultaneous-Branch Operation (Architectural Outlook, Not Yet Calculated)**
-- All Proposal III analysis assumes sequential, single-branch water use. The coil sizing itself (2-inch bore throughout, with margins well above what P1 and P2 actually require) suggests the trunk main — not the branch coils — is the limiting element for a future upgrade.
-- A future revision could upsize the trunk main to allow P1/P2/P3 branches to draw simultaneously (P3 becoming a permanently-valved bypass branch rather than one gated behind P1/P2 completion), shortening P3's effective wait per P1 event and pushing throughput closer to the coil-delivery ceiling rather than the arbitration-window ceiling. No flow-split or trunk-sizing math has been carried out for this yet.
+**Open Items Carried From This Revision**
+- Confirm the 2°C / 24°C T10 outlet-temperature reference points against their intended design meaning (currently interpreted as extreme-cold and mild fill conditions).
+- Confirm the 90% Eco/Efficiency mode threshold — the 50% Full Throttle line is fixed by the existing batch-release trigger, but the upper boundary is a proposed value pending sign-off.
+- Consider the overlap-credited refinement to P3's dual-branch budget calculation (Section 6) if a less conservative throughput figure is wanted for planning purposes.
 
 **PO Tank Insulation**
-- Insulating the PO tank to T5's standard is the identified highest-leverage, lowest-capital-cost efficiency gain — its uninsulated loss currently outweighs its sensible heating duty roughly 7:1, and every megajoule saved there returns directly to P3's melting window.
+- Insulating the PO tank to T5's standard remains the identified highest-leverage, lowest-capital-cost efficiency gain — its uninsulated loss currently outweighs its sensible heating duty roughly 7:1, and every megajoule saved there returns directly to P3's melting window. Insulating it would also reduce the sensitivity of the PO tank's linearised loss term in the dynamic demand function to operating temperature, a secondary benefit for the ADA control law's accuracy.
 
 **Electrical Design**
 - Detailed electrical system design in AutoCAD, covering power distribution, protection coordination, and wiring layout strategies for the immersion array and pump drives.
 
 **Controls Architecture**
 - Discussion with the senior engineer to finalise the control philosophy — evaluating a PLC-based architecture against distributed individual controllers, and assessing the feasibility of PI control loops in place of hard on/off automation for improved stability and reduced thermal cycling.
+- Formal review of the ADA framework itself with the senior engineer — this architecture has not yet been formally reviewed and is pending discussion.
 
 **Instrumentation & HMI**
 - Full sensor schedule: selection, specification, and placement of temperature, level, and flow instruments across all four tanks and the solar loop.
-- HMI design for operator visibility, PO-tank designation/dispense workflow, and manual override capability.
+- HMI design for operator visibility, PO-tank designation/dispense workflow, suspicion-meter status display, and manual override capability.
 
 **Hydraulics & Pump Selection**
-- Head loss calculations for the coil circuits and the single-pump solar/primary loop. Hand calculations have been initiated; finalisation is deferred until site plumbing routing and the pipe NPS selection are confirmed.
-- Pump selection based on the locked head loss and flow rate requirements.
+- Head loss calculations for the coil circuits and the single-pump solar/primary loop, now including the upsized 1.5-inch trunk main. Hand calculations have been initiated; finalisation is deferred until site plumbing routing is confirmed.
+- Pump selection based on the locked head loss and flow rate requirements, sized for dual-branch worst-case simultaneous draw.
 
 ---
 
@@ -279,10 +336,10 @@ With the revised (Proposal III) architecture in place, the next phases are:
 This project was undertaken as a Junior Automation Design Architect during an internship at MEPL, working under the direction of the senior project lead. The scope of personal contributions is as follows:
 
 **Thermal Sizing & Proposal Authorship**
-All thermal calculations, coil sizing, case matrix analysis (A.A / A.B / B.A / B.B in Proposal I; unified 1-inch supply with 1–2 inch coil bore sweep in Proposal II; fixed 2-inch bore, individualised-feed, and three-way priority architecture in Proposal III), phase-change modelling, solar reliability analysis, and the full engineering proposal documents were produced independently, grounded in the self-authored VCH Sizing Framework (2nd Ed.).
+All thermal calculations, coil sizing, case matrix analysis (A.A / A.B / B.A / B.B in Proposal I; unified 1-inch supply with 1–2 inch coil bore sweep in Proposal II; fixed 2-inch bore, individualised-feed, and three-way priority architecture in Proposal III; dual-branch trunk sizing, need-array reframing, and the ADA demand functions in Proposal IV), phase-change modelling, solar reliability analysis, and the full engineering proposal documents were produced independently, grounded in the self-authored VCH Sizing Framework (2nd Ed.).
 
 **Process Architecture**
-The single-pump solar feedback loop topology, the individualised T10 feed restructuring, the PO tank isolation logic, and the P1/P2/P3 sequential-budget priority ladder were independently conceived and designed. This architecture has not yet been formally reviewed with the senior engineer and is pending discussion.
+The single-pump solar feedback loop topology, the individualised T10 feed restructuring, the PO tank isolation logic, the P1/P2/P3 priority architecture (sequential-budget in Proposal III, need-array in Proposal IV), the demand-driven dynamic water temperature control law, and the Eco/Efficiency/Full Throttle mode logic were independently conceived and designed. The formalisation of this control logic under the ADA name is new to Proposal IV. This architecture has not yet been formally reviewed with the senior engineer and is pending discussion.
 
 **Tank Geometry (Collaborative)**
 Initial vessel proportions and aspect ratio estimates were produced as part of the thermal sizing work. Detailed manufacturable geometry and SolidWorks verification were completed by the team's mechanical engineer, who refined the dimensions to minimise plate waste and weld seam count.
@@ -339,7 +396,7 @@ where $Q_\text{batch}$ is the average power needed to melt 2 t of palm oil over 
 
 ## 10. Changelog: Proposal II → Proposal III (Architectural Revision I)
 
-This section documents the technical changes introduced by the current revision.
+This section documents the technical changes introduced by the third revision.
 
 ### 10.1 Shared Oil Feed → Individualised Oil Feed per Tank
 
@@ -349,19 +406,19 @@ This section documents the technical changes introduced by the current revision.
 
 ### 10.2 New Tank Class: The PO (Palm Olein) Tank
 
-One T10 tank may now be designated, via HMI input, as a dedicated palm olein store. Once designated, it is automatically excluded from the P3 melting rotation and the legacy tank-scoring system, manually hard-isolated via its ball valve as a PLC-independent safeguard, and dispensed only through operator-triggered HMI pulse logic (compute dispense time → run dispense valve → enter a 20 s-on/60 s pulse-hold to keep residual oil warm → clear on operator "process complete").
+One T10 tank may now be designated, via HMI input, as a dedicated palm olein store. Once designated, it is automatically excluded from the P3 melting rotation and the legacy tank-scoring system, manually hard-isolated via its ball valve as a PLC-independent safeguard, and dispensed only through operator-triggered HMI pulse logic (compute dispense time → run dispense valve → enter a 20 s-on/60 s pulse-hold to keep residual oil warm → clear on operator "process complete"). Proposal IV extends this tank's governance model further (Section 11.3).
 
 ### 10.3 Two-Tier → Three-Tier Priority Architecture
 
 **Proposal II's** priority logic was effectively single-tier (T5 master, T10 demand-pull).
 
-**Proposal III** introduces a three-way ladder — **P1 (T5 trim-heat)**, **P2 (PO tank maintenance)**, **P3 (T10 palm oil melt)** — resolved not by hard lockout but by a **sequential daily energy budget**: P1 and P2 take what their computed duty periods require, and P3 receives the remainder of the 24-hour window by design. P2 is additionally bounded by a 10-minute arbitration window (sized at 3× T5's worst-case heat-up time) with a flat 5-minute cap, so it cannot starve P3 indefinitely.
+**Proposal III** introduces a three-way ladder — **P1 (T5 trim-heat)**, **P2 (PO tank maintenance)**, **P3 (T10 palm oil melt)** — resolved not by hard lockout but by a **sequential daily energy budget**: P1 and P2 take what their computed duty periods require, and P3 receives the remainder of the 24-hour window by design. P2 is additionally bounded by a 10-minute arbitration window (sized at 3× T5's worst-case heat-up time) with a flat 5-minute cap, so it cannot starve P3 indefinitely. This sequential model is superseded by the need-array in Proposal IV (Section 11.2).
 
 ### 10.4 Coil Bore and Length: From Swept Variable to Fixed Spec
 
 **Proposal II** swept coil bore across 1", 1.25", 1.5", and 2" NPS to find a minimum-length design point (1.5" recommended, ≈56 m).
 
-**Proposal III** fixes the bore at **2-inch NPS Sch. 10S across every tank** (T10, PO, and T5), with coil length fixed at **30 m** (T10/PO) and **10 m** (T5), and water supply fixed at a constant 70°C (previously 70–75°C, variable) with feed velocity reduced to 1.2 m/s (from 1.5 m/s). Because the oil-side film continues to dominate 1/U for the melting duty, standardising the bore for procurement simplicity costs almost nothing in thermal performance.
+**Proposal III** fixes the bore at **2-inch NPS Sch. 10S across every tank** (T10, PO, and T5), with coil length fixed at **30 m** (T10/PO) and **10 m** (T5), and water supply fixed at a constant 70°C (previously 70–75°C, variable) with feed velocity reduced to 1.2 m/s (from 1.5 m/s). Because the oil-side film continues to dominate 1/U for the melting duty, standardising the bore for procurement simplicity costs almost nothing in thermal performance. This spec carries forward unchanged into Proposal IV.
 
 ### 10.5 NTU Model Correction: $C_\text{min} = C_w$, Not the Oil Throughput Rate
 
@@ -373,11 +430,61 @@ One T10 tank may now be designated, via HMI input, as a dedicated palm olein sto
 
 An interim design considered alarming when P1's duty cycle exceeded twice its statistically expected value over a rolling window — rejected because P1's demand is legitimately bursty, making a duty-percentage threshold unable to distinguish a busy day from a fault.
 
-**Proposal III** instead alarms on **observed heating/cooling rates versus what is physically achievable** given the coil's known delivery capacity and the tank's own computed loss rate — decoupling fault detection from duty-cycle bookkeeping entirely.
+**Proposal III** instead alarms on **observed heating/cooling rates versus what is physically achievable** given the coil's known delivery capacity and the tank's own computed loss rate — decoupling fault detection from duty-cycle bookkeeping entirely. Retained unchanged in Proposal IV.
 
-### 10.7 Headline Result Basis Change
+### 10.7 Headline Result Basis
 
-Proposal III's throughput and safety-margin figures are reported against the **single-branch, sequential water-use case only** (P1, P2, P3 never draw simultaneously). A simultaneous-branch upgrade is outlined qualitatively as a future direction (Section 7) but is explicitly out of scope for the quantitative results in this revision.
+Proposal III's throughput and safety-margin figures were reported against the **single-branch, sequential water-use case only** (P1, P2, P3 never draw simultaneously). Simultaneous-branch operation was outlined qualitatively as a future direction but explicitly out of scope for that revision's quantitative results — this is exactly what Proposal IV implements and quantifies.
+
+---
+
+## 11. Changelog: Proposal III → Proposal IV (Architectural Revision II — ADA)
+
+This section documents the technical changes introduced by the current revision, in which the sequential single-branch architecture of Proposal III is replaced by the parallel, dual-branch **Adaptive Demand Allocation Architecture (ADA)**.
+
+### 11.1 Trunk Upsize: Enabling Dual-Branch Flow
+
+**Proposal III** used a 1-inch trunk main feeding 1-inch branches — structurally capable of serving only one branch at a time without starving it below design flow.
+
+**Proposal IV** upsizes the trunk main to **1.5-inch NPS**. Sized to run at ≈1.021 m/s, the 1.5-inch trunk delivers exactly 2× the flow of a single 1-inch branch at its normal 1.2 m/s design velocity — enough to serve **two branches simultaneously**, each at full individual design flow, without either being starved. When only one branch is active, the trunk simply throttles down to ≈0.508 m/s. No branch-level, coil, or tank-level hardware changed; this is a single-fitting-scale intervention with outsized downstream effect.
+
+### 11.2 Priority Ladder → Need Array
+
+**Proposal III's** sequential daily energy budget assumed only one branch could ever be active, so P1 and P2 were served first, in full, before P3 received any remaining time.
+
+**Proposal IV** reframes arbitration as a **need array**: however many of P1/P2/P3 currently have live demand determines whether the trunk runs single-branch or dual-branch. When two processes are concurrently active, both are served in full via the upsized trunk rather than one waiting on the other. P1 remains unbounded and effectively guaranteed; P2 remains capped (Section 11.3); P3 is the remainder-absorbing tier, now benefiting directly from dual-branch parallel operation whenever a second slot is free. P3's daily throughput is modelled conservatively as a **48 branch-hour pool** (2 branches × 24 hr) minus P1's and P2's full raw duty duration — a deliberate floor estimate, not a best case (see Section 6).
+
+### 11.3 PO Tank Governance: From Hard Cap to Operator-Trust Model
+
+**Proposal III** capped P2 with a flat 10-minute arbitration window and a 5-minute hard limit.
+
+**Proposal IV** replaces this with a **suspicion meter** ($S \in \{0,1,2,3\}$, resetting every 24 hours): sustained draw beyond the expected 500 kg/day escalates from an HMI confirmation prompt ($S{=}1$) through an alarm ($S{=}2$) to autonomous feed isolation with alarm ($S{=}3$) — the only point in this pathway that forces a shutoff — with a 5-minute no-HMI-response auto-increment to prevent the escalation stalling on operator inaction. Independently, a **soft-ceiling buffer** permits draw up to 2× the operator-entered dispense quantity before issuing a warning; crossing it is manual-shutoff only, so a live, supervised dispense is never silently interrupted.
+
+### 11.4 T5 Demand Basis and Worst-Case Loss Evaluation
+
+**Proposal III** evaluated T5 against a 2 t/day throughput and its typical 42.5°C mid-band operating condition for the loss calculation.
+
+**Proposal IV** doubles the T5 demand basis to **4 t/day**, reflecting the higher system-level throughput the dual-branch architecture now supports, and deliberately evaluates T5's standing loss at its **55°C dynamic upper thermal boundary** (the existing $T_f(x,y,m_p)$ safety limit) rather than the operating mid-band — a conservative worst-case stress test, not the typical daily figure.
+
+### 11.5 Dynamic, Demand-Driven Water Temperature
+
+**Proposal III** held the water supply at a constant, fixed 70°C regardless of actual instantaneous demand.
+
+**Proposal IV** derives the water target from real-time aggregate demand ($E_\text{total}=E_\alpha+E_5+E_{C^\ast}$, summed on a 10-second refresh window) via a two-point anchored proportional law:
+
+$$T_\text{water} = 40 + \frac{70-40}{6.16}\,P = 40 + 4.87\,P\ [\text{kW}], \quad \text{clamped to } [40,70]°\text{C}$$
+
+anchored at system idle ($P=0\to40°C$) and T5's own worst-case draw ($P\approx6.16\ \text{kW}\to70°C$). Solar and auxiliary supply are then gated purely on whether each can meet this dynamic target, rather than running to a fixed schedule. Each demand term ($E_\alpha$, $E_5$, $E_{C^\ast}$) explicitly tracks the physical discontinuity at palm oil's melting point and the distinct (approximated, deliberately linearised) natural-convection loss behaviour of T5's insulated jacket versus the PO tank's uninsulated shell.
+
+### 11.6 Load-Responsive Operating Modes
+
+**Proposal III** had no load-responsive mode logic — P3 ran continuously whenever it held a branch.
+
+**Proposal IV** introduces three operating postures for P3, governed by **T5's own live level** ($\alpha_S$) rather than tank temperature or T10 level: Eco Mode (≥90%), Efficiency Mode (90–50%), and Full Throttle (<50%) — the Full Throttle threshold deliberately matching the existing batch-release trigger, so the two mechanisms escalate together.
+
+### 11.7 Headline Result Basis Change
+
+Proposal IV's throughput figures are reported against the **dual-branch, need-array case**, evaluated as a deliberately conservative floor (Section 6). Combined system throughput rises to ≈5.42 t/day (≈271% of the original 2 t/day mandate), against Proposal III's ≈2.45 t/day (≈122%) — the entire gain attributable to the trunk upsize and need-array reframing described above, with no change to individual coil sizing.
 
 ---
 
