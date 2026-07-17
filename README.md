@@ -76,7 +76,7 @@ Rather than treating each change as a disruption requiring a ground-up redesign,
 
 The standard two-loop passive solar integration approach — where the solar circuit operates independently and dumps heat into the primary loop only when capacity permits — would have required a dedicated secondary circulation pump. To reduce capital cost and system complexity, the loop topology was redesigned so that a single high-pressure pump handles full circulation duties across both the solar collectors and the primary process loop.
 
-The trade-off is a heavier-duty pump selection and a significantly higher system head loss, both of which are documented and will be finalised once site plumbing and pipe routing are confirmed. The architectural logic underpinning this single-pump design is reflected in the Process Flow Diagram.
+The trade-off is a heavier-duty pump selection and a significantly higher system head loss, both of which are documented and will be finalised once site plumbing and pipe routing are confirmed. The architectural logic underpinning this single-pump design is reflected in P&ID III, which supersedes the original Process Flow Diagram as the authoritative routing reference.
 
 ---
 
@@ -141,7 +141,7 @@ Instead, arbitration was resolved as a **sequential daily energy budget**: P1's 
 
 ### Ambient Data: Weighted-Average Design Philosophy
 
-Kathmandu's solar irradiance and ambient temperature data are not available from a single authoritative instrument record for this site. Rather than anchoring the design on a single "average good day" figure — which would leave the system undersized for adverse conditions — weighted annual averages were compiled across multiple sources and applied consistently throughout the sizing work. This methodology appears across solar reliability factors, ambient baseline temperature (18.1°C), and the tank priority scoring matrices ($S_\text{casual}$, $S_\text{immediate}$).
+Kathmandu's solar irradiance and ambient temperature data are not available from a single authoritative instrument record for this site. Rather than anchoring the design on a single "average good day" figure — which would leave the system undersized for adverse conditions — weighted annual averages were compiled across multiple sources and applied consistently throughout the sizing work. This methodology appears across solar reliability factors, ambient baseline temperature (18.1°C), and the tank priority scoring metric ($S_\text{immediate}$).
 
 The limitation is acknowledged: weighted averages characterise typical behaviour, not extremes. The worst-case 70°C HTF scenario in the validation table is the explicit hedge against adverse conditions, extended in the current revision by an explicit worst-case simultaneous-demand check (Section 12).
 
@@ -155,7 +155,7 @@ Initial vessel proportioning followed the aspect ratio guidance in the VCH Sizin
 
 ## 3. System Architecture
 
-> *Process Flow Diagram (PFD) is available in the repository. Detailed architectural data to be added.*
+> **The original Process Flow Diagram (PFD) is now superseded and no longer authoritative.** The current source of truth for process routing is **P&ID III**, the latest revision of the mechanical engineer's Piping & Instrumentation Diagram. The PFD is retained in the repository for historical reference only.
 
 As of the current revision, each of the three T10 tanks has its own **dedicated oil pump and feed line**, with one T10 tank optionally designated by site technicians as the **PO tank** — automatically and manually isolated from the common palm-oil bunch and dispensed only via HMI-driven pulse logic. On the hydronic side, the trunk main is **1.5-inch NPS**, capped at a safe 1.2 m/s rated velocity; two of the three branches are now permanently and continuously dedicated to T10 palm oil melting (P3), while the third branch is shared between T5 (P1) and the PO tank (P2). Branch valve count has been reduced from 8 to 6, and the coil bore across every tank (T5, T10, PO) is now **1.5-inch**, down from 2-inch. Water time across the plant is arbitrated by the **ADA need-array**, now expanded to true three-way concurrent service — see [Section 5.1](#51-the-adaptive-demand-allocation-architecture-ada) and [Section 12](#12-changelog-proposal-iv--system-overview-revised-true-three-way-concurrency).
 
@@ -189,12 +189,11 @@ This algorithm protects high-pressure line components and prevents product degra
 
 ### Volume- and Temperature-Weighted Tank Scoring
 
-Two independent PLC calculation blocks evaluate plant state and drive the staggered delivery queue:
+The tank-scoring system has been consolidated to a **single metric**. The original two-block design ($S_\text{casual}$ for non-urgent solar pre-heating, $S_\text{immediate}$ for urgent auxiliary-backup prioritisation) is retired in favour of one scoring block used for all arbitration decisions:
 
-- **$S_\text{casual}$ Block** — Manages solar thermal energy distribution to tanks requiring non-urgent pre-heating.
-- **$S_\text{immediate}$ Block** — Prioritises auxiliary electric backup (36 kW) to the active processing tank when a downstream demand signal ($\delta$) is high, preventing line starvation.
+$$S_\text{immediate} = 0.6\,(\text{mass fraction}) + 0.4\,(\theta_\text{norm})$$
 
-Retained unchanged through the current revision, applied only across the two T10 tanks not designated as the PO tank.
+applied only across the two T10 tanks not designated as the PO tank, with the **higher-scoring tank winning** priority for both solar and auxiliary delivery. This is a deliberate re-weighting from the original two-block scheme, which split $S_\text{casual}$ (0.6·level + 0.4·temperature) and $S_\text{immediate}$ (0.4·level + 0.6·temperature) into separate mass-weighted and temperature-weighted variants for different demand sources; a single mass-weighted score is now judged sufficient for both.
 
 ### Coil Sizing: Inverted Design Logic
 
@@ -331,8 +330,7 @@ Evaluated under a 1.5-inch trunk main capped at 1.2 m/s, a 1.5-inch coil bore ac
 With the current revision in place, the next phases are:
 
 **Open Items Carried Forward**
-- Confirm the 2°C / 24°C T10 outlet-temperature reference points against their intended design meaning (currently interpreted as extreme-cold and mild fill conditions).
-- Confirm the 90% Eco/Efficiency mode threshold — the 50% Full Throttle line is fixed by the existing batch-release trigger, but the upper boundary is a proposed value pending sign-off.
+- Mode thresholds (Eco/Efficiency/Standard boundaries) remain provisional and may be adjusted at commissioning time once live plant behaviour is observable — the 50% Full Throttle line is fixed by the existing batch-release trigger, but the other boundaries are not yet locked.
 - Reconcile the ≈9% branch flow area discrepancy between the project's hand-derived trunk/branch sizing notes and the base VCH proposal's original 1-inch supply pipe basis (Section 12) against the as-built pipe specification.
 - Carry the ≈36.61 kW peak instantaneous demand finding (≈1.7% over the 36 kW rated auxiliary array) into the electrical design phase explicitly.
 - Confirm the VFD-01 RUN/FWD terminal logic (independent command vs. combined with speed-select) with the manufacturer's documentation before finalising the interlock wiring.
@@ -340,25 +338,29 @@ With the current revision in place, the next phases are:
 **Open Items Carried From the PLC Implementation Document**
 - E-STOP latch reset source not yet defined.
 - Behaviour on a mid-operation switch from Automation Enabled to Disabled (abrupt stop vs. complete-current-step) not yet decided.
-- $m_p$ (remaining oil-phase mass) acquisition method for the $T_f$ register — operator-entered, level-derived, or fixed-constant — not yet decided.
-- Tie-break behaviour on equal $S_\text{casual}$/$S_\text{immediate}$ scores currently defaults to execution order (TA-favoured); flagged for confirmation, not an explicit design decision.
-- Manual-mode LSM/FSM trunk speed selection does not exist on the physical panel (single button, fixed HSM only); confirm acceptable or add a speed-select input.
+- Tie-break behaviour on equal $S_\text{immediate}$ scores currently defaults to execution order (TA-favoured); flagged for confirmation, not an explicit design decision.
 - $D_\text{Mode}$ power-up default not yet specified.
 - Auxiliary staging hysteresis thresholds (26/22, 14/10, 0/2 kW, ±2 kW) are proposed, not independently confirmed.
 - Access level on the PO tank designation confirm input (standard tap vs. supervisor PIN) remains open.
 
+**Resolved Since Last Revision**
+- $m_p$ (remaining oil-phase mass) for the $T_f$ register is acquired from the ultrasonic level sensor and converted to mass via the height-to-mass constants (Section 1.6.7 of the companion PLC document) — no longer an open item.
+- Manual-mode trunk speed selection is confirmed as intended: the physical panel button drives a fixed HSM only, with no LSM/FSM selection on hardware — this is accepted behaviour, not a gap to close.
+
 **PO Tank Insulation**
 - Insulating the PO tank to T5's standard remains the identified highest-leverage, lowest-capital-cost efficiency gain — its uninsulated loss currently outweighs its sensible heating duty roughly 7:1, and every megajoule saved there returns directly to P3's melting window. Insulating it would also reduce the sensitivity of the PO tank's linearised loss term in the dynamic demand function to operating temperature, a secondary benefit for the ADA control law's accuracy.
 
-**Electrical Design**
-- Detailed electrical system design in AutoCAD, covering power distribution, protection coordination, and wiring layout strategies for the immersion array and pump drives — informed by the current revision's peak instantaneous demand finding.
+**Electrical Design — Complete**
+- Detailed electrical system design in AutoCAD, covering power distribution, protection coordination, and wiring layout strategies for the immersion array and pump drives, is now finished after several iterations — informed by the current revision's peak instantaneous demand finding.
 
 **Controls Architecture**
 - Discussion with the senior engineer to finalise the control philosophy — evaluating a PLC-based architecture against distributed individual controllers, and assessing the feasibility of PI control loops in place of hard on/off automation for improved stability and reduced thermal cycling.
 - Formal review of the ADA framework itself, including its current three-way concurrent arbiter, with the senior engineer — this architecture has not yet been formally reviewed and is pending discussion.
 
-**Instrumentation & HMI**
-- Full sensor schedule: selection, specification, and placement of temperature, level, and flow instruments across all four tanks and the solar loop — cross-referenced against the confirmed 11-channel analog input assignment in the companion PLC document.
+**Instrumentation — Complete**
+- The full sensor schedule — selection, specification, and placement of temperature, level, and flow instruments across all four tanks and the solar loop — is finished, cross-referenced against the confirmed 11-channel analog input assignment in the companion PLC document.
+
+**HMI (Remaining)**
 - HMI design for operator visibility, PO-tank designation/dispense workflow, suspicion-meter status display, and manual override capability.
 
 **Hydraulics & Pump Selection**
@@ -381,7 +383,7 @@ The single-pump solar feedback loop topology, the individualised T10 feed restru
 Initial vessel proportions and aspect ratio estimates were produced as part of the thermal sizing work. Detailed manufacturable geometry and SolidWorks verification were completed by the team's mechanical engineer, who refined the dimensions to minimise plate waste and weld seam count.
 
 **PFD vs. P&ID**
-The Process Flow Diagram was produced as part of this proposal. The team's mechanical engineer has produced a separate P&ID; the two documents are currently not fully aligned and reconciliation is in progress. The oil distribution port (x/y/z) logic in the current revision is confirmed directly against the P&ID and taken as accurate as given, not re-derived from first principles.
+The Process Flow Diagram was produced as part of an earlier proposal but is now superseded — **P&ID III**, the mechanical engineer's latest Piping & Instrumentation Diagram revision, is the current authoritative process-routing reference, and the PFD is retained only for historical context. The oil distribution port (x/y/z) logic in the current revision is confirmed directly against P&ID III and taken as accurate as given, not re-derived from first principles.
 
 **Note:** The project is ongoing. The contributions documented here reflect the proposal and PLC-implementation stage. Detailed electrical design and physical commissioning are planned for subsequent phases.
 
@@ -615,7 +617,7 @@ Full PLC ladder logic, register assignments, AI/DI/DO tables, safety gating, and
 
 - **Analog/Digital I/O** — 11-channel AI assignment (level, temperature, flow); X0–X10 digital inputs and Y0–Y25 digital outputs, confirmed against the panel's AutoCAD Electrical schematic (sheet 6 of 10).
 - **Safety and Mode Control** — hardwired E-STOP caveat (IEC 60204-1), System OK flag, Automation Enable, and the manual/auto mutual-exclusion gating pattern used throughout.
-- **Calculated Registers** — the 10 s refresh oscillator; the $T_\text{water}$ target law; the four-tier mode hysteresis ladder; the suspicion score; auxiliary staging; $S_\text{casual}$/$S_\text{immediate}$ tank scoring; and height-to-mass conversion (density back-derived to 957.0 kg/m³ from the base document's own full-tank figures).
+- **Calculated Registers** — the 10 s refresh oscillator; the $T_\text{water}$ target law; the four-tier mode hysteresis ladder; the suspicion score; auxiliary staging; the consolidated $S_\text{immediate}$ tank scoring; and height-to-mass conversion (density back-derived to 957.0 kg/m³ from the base document's own full-tank figures).
 - **$T_f$ Thermal Blending Register** — the 32-bit fixed-point ladder implementation of the dynamic upper thermal boundary, including the open item on $m_p$ acquisition.
 - **P1/P2 Blocks and the Need-Array Arbiter** — now a genuine four-destination model (T5, TA, TB, TC) mapping directly to Section 12 above.
 - **Fault Detection** — physics-based temperature rate-of-change alarms (using live mass, not fixed constants), activity-gated level/mass rate anomaly detection, and the T10 high-limit hard alarm.
