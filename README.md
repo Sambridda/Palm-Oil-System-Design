@@ -107,7 +107,7 @@ A recurring temptation throughout the architecture's development was to build th
 
 This was not a shortcut. It was a deliberate engineering trade: simpler logic has fewer places to hide a bug, fewer registers for a commissioning technician to misconfigure, and a fault behaviour that can be explained in one sentence rather than twelve. The same philosophy drove the simplification of the oil-line fault path — no escalation, no auto-stop, just a flowmeter and an operator — and the consolidation of the two-block tank-scoring system ($S_\text{casual}$ / $S_\text{immediate}$) into a single formula.
 
-**Takeaway:** Complex systems are efficient. Reliable systems are functional. When the two are in tension, the system that a commissioning engineer can verify in an afternoon is worth more than the system that is theoretically optimal on paper.
+**Takeaway:** Complex systems are efficient. Reliable systems are functional. When the two are in tension, the system that a commissioning engineer can verify in an afternoon is worth more than the system that is theoretically optimal on paper.**
 ---
 
 ### The A.A / A.B / B.A / B.B Case Matrix
