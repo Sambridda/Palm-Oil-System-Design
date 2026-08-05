@@ -81,10 +81,33 @@ Rather than treating each change as a disruption, the architecture was kept modu
 
 ---
 
-### Solar Loop Integration: Single-Pump Architecture
+### Modbus Round-Robin Configuration: The Lowest Point
 
-The standard two-loop passive solar integration approach would have required a dedicated secondary circulation pump. The loop topology was redesigned so a single high-pressure pump handles full circulation duties across both the solar collectors and the primary process loop. The trade-off is a heavier-duty pump selection and significantly higher system head loss — both carried forward to the hydraulics phase.
+Implementing the satellite communication between the master PLC and the three destination HMIs via Modbus round-robin polling was the most difficult moment in the development phase. The challenge was not conceptual — the round-robin sequencer logic was straightforward once the structure was clear — but configurational. Without prior experience setting up Modbus across multiple Coolmay devices, every attempt to get the ADPRW instruction talking to the satellite stations failed silently or returned junk, with no obvious diagnostic path.
 
+The breakthrough came from going directly to the source: contacting Coolmay's own engineer, who clarified the specific register and parameter configuration the protocol required. Once that was in hand, the round-robin sequencer (three stations, two ADPRW exchanges each, gated by timers T10–T61 and stepped by flags M0–M5) fell into place. The write-back exchange added in V1.1 — sending an acknowledgement back to each requesting satellite — was only possible because that initial configuration was correct.
+
+**Takeaway:** Hardware-specific communication protocol configuration is rarely fully documented in the manual. When the datasheet runs out, the manufacturer's engineer is a legitimate engineering resource, not a last resort.
+
+---
+
+### Register Allocation: The Hidden Complexity of Memory Management
+
+Distributing data coherently across the PLC's D, M, T, and counter registers — while simultaneously managing what the HMI reads from and writes to — proved more cognitively demanding than any single control block in the architecture. The difficulty was not any individual register assignment, but the cumulative effect of a large program: data written in one section was silently consumed in another three hundred steps later, and without a continuously maintained register map, tracking down a wrong value meant tracing the entire chain from sensor input to output.
+
+The reconstructed register map in the PLC Guide (Section 5) exists because of this problem — it was built retrospectively from the ladder to serve as the reference the development phase lacked. The V1.1 addition of M115–M146 as the physical input mirror, for example, displaced the earlier speculative allocation of M40–M71 for that purpose — a collision that would have been caught immediately with a live map but only surfaced during the cross-reference exercise.
+
+**Takeaway:** For any PLC program beyond a few dozen rungs, a register map is not documentation overhead — it is a development tool. Maintain it alongside the program from the first rung, not after the fact.
+
+---
+
+### Simplicity as an Engineering Decision
+
+A recurring temptation throughout the architecture's development was to build the most complete, most faithful implementation of every specified mechanism. The fault detection system is the clearest example: the architecture specified twelve individually-adjustable, per-direction limit registers across all ten sensor channels — technically correct and fully covering every tunability case. The as-built implementation collapsed this to a single ratio-based check per channel, repeated ten times, with adjustable registers only on the four level channels where a bad reading has the most severe cascade consequences.
+
+This was not a shortcut. It was a deliberate engineering trade: simpler logic has fewer places to hide a bug, fewer registers for a commissioning technician to misconfigure, and a fault behaviour that can be explained in one sentence rather than twelve. The same philosophy drove the simplification of the oil-line fault path — no escalation, no auto-stop, just a flowmeter and an operator — and the consolidation of the two-block tank-scoring system ($S_\text{casual}$ / $S_\text{immediate}$) into a single formula.
+
+**Takeaway:** Complex systems are efficient. Reliable systems are functional. When the two are in tension, the system that a commissioning engineer can verify in an afternoon is worth more than the system that is theoretically optimal on paper.
 ---
 
 ### The A.A / A.B / B.A / B.B Case Matrix
