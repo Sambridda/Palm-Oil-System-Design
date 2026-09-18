@@ -7,6 +7,8 @@ A passive solar thermal loop and a 36 kW auxiliary electric immersion array are 
 
 The system is built, programmed and in commissioning. The work below spans thermal modelling, control architecture, as-built ladder logic on a Coolmay L10S, and the commissioning and site-calibration procedures used to bring it up.
 
+*This is the short version. **[ARCHIVE.md](./ARCHIVE.md)** has the full engineering history — every proposal revision back to the first sizing pass, all the changelogs, the register-level reconciliation log, the full results tables, and the open items still outstanding.*
+
 ---
 
 ## System at a Glance
@@ -86,6 +88,8 @@ The system is built, programmed and in commissioning. The work below spans therm
 | ADA — Full Analysis (1D Radial Thermal Model) | Pump/circuit characterisation and rebuilt tank thermal model |
 | VCH Sizing Framework, 2nd Ed. | Published, generalised sizing methodology ([Zenodo](https://doi.org/10.5281/zenodo.21009246)) |
 
+Full results tables, revision-by-revision changelogs (Proposal I through ADA 3.0), and the complete open-items list live in **[ARCHIVE.md](./ARCHIVE.md)**.
+
 ---
 
 ## Status
@@ -98,4 +102,4 @@ Architecture locked, PLC program, HMI, electrical schematic and panel design com
 
 That simplicity is the harder engineering choice, and usually the right one. The best decisions on this project were subtractions: one scoring formula instead of two, one pointer loop instead of three hand-written comparison structures, one number convention instead of a mental scaling correction per register, one tunable fault threshold where ten had been specified. A complex design and a long document that nobody reads is not rigour — it is work that hasn't been finished yet.
 
-*Full technical documentation available on request.*
+*Full technical documentation, and the complete engineering history behind this project, is in [ARCHIVE.md](./ARCHIVE.md).*
