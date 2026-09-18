@@ -42,6 +42,11 @@ The system is built, programmed and in commissioning. The work below spans therm
 - Wrote **PLC Guide V3.0**, a single consolidated programming reference merging every block of the V1.1 guide with ADA 3.0's simplified core — with a **Reconciliation Log that resolves every register and logic collision between the two explicitly, rather than flagging it**: M4 keeps its Tf-interlock meaning and the PO-stored flag moves to a new address; the single 0.6 × Level + 0.4 × Temperature scoring formula supersedes the old two-variant incumbent/challenger rule; the quadratic Ttarget law supersedes V1.1's linear rung; Heater Staging becomes the sole driver of the three heater coils, avoiding a two-master conflict with the auxiliary stage register.
 - Moved all real-valued arithmetic into the float register family, which removed the 16-bit overflow risk that had forced 32-bit scaling tricks throughout the energy and Tf blocks — same formulas, no scaling.
 
+### Electrical design and panel build
+- Drew the **full electrical schematic** for the plant and walked the trickier connections through with the technician on site rather than handing over a drawing and hoping it read correctly.
+- Designed the **control panel layout** for the main enclosure and for the three substations.
+- Sized the field wiring on site with a technician against real runs and loads: **0.75 mm² for all logic and 24 V, 1.5 mm² for the gear pump, 4 mm² for the heater circuit.**
+
 ### Commissioning and calibration
 - Authored a **Commissioning Verification Checklist (Rev. 3)** worked through item-by-item with the technician on the live system, with an explicit tolerance policy: ±5% on calculated and analog quantities, **exact match on anything logical** — valve state, latch behaviour, sequencing, which branch fires — because there is no such thing as a 5% correct interlock. A third mark, *Unsatisfactory*, is reserved for test points the PLC Guide does not pin to an exact register, so open questions stay visible instead of being forced into a pass or a fail.
 - Authored the **Site Testing & Calibration** procedure covering RTD, ultrasonic level, VFD-to-flowrate, tank geometry, and oil-node dispense-volume calibration — every table written as a template to travel to site and come back filled in.
@@ -57,6 +62,8 @@ The system is built, programmed and in commissioning. The work below spans therm
 **Chose simplicity deliberately, not by default.** The architecture originally specified a 12-register-per-channel fault detection scheme — fully correct, fully tunable. I collapsed it to one ratio-based check repeated ten times, keeping adjustable registers only on the four channels where a bad reading cascades into mass, temperature and priority decisions. Fewer places for a commissioning technician to introduce a bug, in exchange for tunability I judged wasn't earning its complexity.
 
 **Said no to the intuitive fix.** Insulation looks like the obvious answer to a cold tank; my own numbers gave it about 6% more production at cold start, which doesn't justify the cost, so I didn't recommend it. What the simulations kept pointing at instead was the solid oil layer itself — so a slow impeller or even manual agitation stays on the table, and insulation sits below it.
+
+**Got the panel wrong, and it stayed wrong.** The main control panel was the first enclosure I had designed, and I sized it smaller than it needed to be — a measurement and judgement error on my part, caught only once it was already fabricated and past amending. The senior engineer reworked the layout around it and switched the 24 V power supply to fit everything in. Paper designs forgive you; sheet metal does not, and I now treat enclosure sizing as something to over-check before it goes to fabrication rather than after.
 
 **Treated requirement volatility as a design constraint, not a disruption.** Across five-plus proposal revisions — a new product line, two coil-bore changes, a trunk upsize — the VCH sizing methodology and priority-budget philosophy stayed modular enough that each new requirement extended the framework rather than triggering a rebuild.
 
@@ -83,6 +90,12 @@ The system is built, programmed and in commissioning. The work below spans therm
 
 ## Status
 
-Architecture locked, PLC program and HMI complete, and the plant is in installation and commissioning — control panel and tanks fabricated, site calibration and verification in progress against the checklist above.
+Architecture locked, PLC program, HMI, electrical schematic and panel design complete. The plant is in its installation phase, roughly **30% complete** — control panel and tanks fabricated, wiring underway, site calibration and verification to follow against the checklist above.
+
+---
+
+## What This Project Taught Me
+
+That simplicity is the harder engineering choice, and usually the right one. The best decisions on this project were subtractions: one scoring formula instead of two, one pointer loop instead of three hand-written comparison structures, one number convention instead of a mental scaling correction per register, one tunable fault threshold where ten had been specified. A complex design and a long document that nobody reads is not rigour — it is work that hasn't been finished yet.
 
 *Full technical documentation available on request.*
